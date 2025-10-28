@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 
-export default function OwnerOrdersPage() {
+export default function CafeOrdersPage() {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -10,11 +10,10 @@ export default function OwnerOrdersPage() {
     async function fetchOrders() {
       try {
         const token = localStorage.getItem("token");
-        const res = await fetch("http://localhost:5000/api/orders/my-cafe-orders", {
+        const res = await fetch("http://localhost:5000/api/orders/cafe", {
           headers: { Authorization: `Bearer ${token}` },
         });
-
-        if (!res.ok) throw new Error("Failed to fetch orders");
+        if (!res.ok) throw new Error("Failed to load orders");
 
         const data = await res.json();
         setOrders(data);
@@ -24,7 +23,6 @@ export default function OwnerOrdersPage() {
         setLoading(false);
       }
     }
-
     fetchOrders();
   }, []);
 
@@ -33,7 +31,7 @@ export default function OwnerOrdersPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
-      <h1 className="text-3xl font-bold mb-6 text-gray-800">☕ Café Orders</h1>
+      <h1 className="text-3xl font-bold mb-6 text-gray-800">📦 Incoming Orders</h1>
 
       {orders.length === 0 ? (
         <p className="text-gray-500 text-center">No orders yet.</p>
@@ -54,9 +52,7 @@ export default function OwnerOrdersPage() {
                   className={`px-3 py-1 rounded-full text-sm font-medium ${
                     order.status === "DELIVERED"
                       ? "bg-green-100 text-green-700"
-                      : order.status === "PREPARING"
-                      ? "bg-yellow-100 text-yellow-700"
-                      : "bg-gray-100 text-gray-700"
+                      : "bg-yellow-100 text-yellow-700"
                   }`}
                 >
                   {order.status}
