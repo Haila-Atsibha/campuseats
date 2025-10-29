@@ -49,7 +49,7 @@ export default function StudentDashboard() {
                 Profile
               </button>
             </Link>
-            <Link href="/orders">
+            <Link href="/orderHistory">
               <button className="rounded-lg bg-gradient-to-r from-orange-500 to-pink-500 px-4 py-2 font-semibold text-white hover:opacity-90">
                 My Orders
               </button>

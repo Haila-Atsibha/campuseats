@@ -7,25 +7,27 @@ export default function CafeMenuPage() {
   const [foods, setFoods] = useState([]);
   const [cafe, setCafe] = useState(null);
   const [message, setMessage] = useState("");
-  const [addingItem, setAddingItem] = useState(null); // track which food is being added
+  const [addingItem, setAddingItem] = useState(null);
 
-  // ✅ Fetch menu for this café
+  // Fetch menu for this café
   useEffect(() => {
-    async function fetchMenu() {
-      try {
-        const res = await fetch(`http://localhost:5000/api/cafe/${id}`);
-        if (!res.ok) throw new Error("Failed to load menu");
-        const data = await res.json();
-        setCafe(data);
-        setFoods(data.foods || []);
-      } catch (error) {
-        console.error("Failed to fetch menu:", error);
-      }
+  async function fetchMenu() {
+    try {
+      const res = await fetch(`http://localhost:5000/api/cafe/${id}`);
+      if (!res.ok) throw new Error("Failed to load menu");
+      const data = await res.json();
+      console.log("Fetched cafe data:", data); // <-- log here
+      setCafe(data);
+      setFoods(data.foods || []);
+    } catch (error) {
+      console.error("Failed to fetch menu:", error);
     }
-    fetchMenu();
-  }, [id]);
+  }
+  fetchMenu();
+}, [id]);
 
-  // ✅ Add to Cart Handler
+
+  // Add to Cart Handler
   async function handleAddToCart(foodId) {
     const token = localStorage.getItem("token");
     if (!token) {
@@ -47,10 +49,7 @@ export default function CafeMenuPage() {
       });
 
       const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.error || "Failed to add to cart");
-      }
+      if (!res.ok) throw new Error(data.error || "Failed to add to cart");
 
       setMessage("✅ Added to cart!");
       setTimeout(() => setMessage(""), 2000);
@@ -80,35 +79,33 @@ export default function CafeMenuPage() {
       )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {foods.length > 0 ? (
-          foods.map((food) => (
-            <div
-              key={food.id}
-              className="bg-white shadow rounded-xl p-4 flex flex-col justify-between"
-            >
-              <div>
-                <h2 className="text-lg font-semibold">{food.name}</h2>
-                <p className="text-gray-600 text-sm mb-2">{food.description}</p>
-              </div>
-              <div className="flex justify-between items-center mt-3">
-                <span className="font-semibold text-orange-600">
-                  ${food.price}
-                </span>
-                <button
-                  onClick={() => handleAddToCart(food.id)}
-                  disabled={addingItem === food.id}
-                  className="rounded-lg bg-gradient-to-r from-orange-500 to-pink-500 px-3 py-1 text-sm text-white hover:opacity-90 disabled:opacity-60"
-                >
-                  {addingItem === food.id ? "Adding..." : "Add to Cart"}
-                </button>
-              </div>
-            </div>
-          ))
-        ) : (
-          <p className="text-gray-600 text-center col-span-full">
-            No menu items yet.
-          </p>
-        )}
+       {foods.map((food) => (
+  <div key={food.id} className="bg-white shadow rounded-xl p-4 flex flex-col justify-between">
+    <img
+  src={food.imageUrl || "/fallback.jpg"}
+  alt={food.name}
+  className="w-full h-48 object-cover rounded-lg mb-3"
+/>
+
+
+    <div>
+      <h2 className="text-lg font-semibold text-gray-800">{food.name}</h2>
+      <p className="text-gray-600 text-sm mb-2">{food.description}</p>
+    </div>
+
+    <div className="flex justify-between items-center mt-3">
+      <span className="font-semibold text-orange-600">${food.price}</span>
+      <button
+        onClick={() => handleAddToCart(food.id)}
+        disabled={addingItem === food.id}
+        className="rounded-lg bg-gradient-to-r from-orange-500 to-pink-500 px-3 py-1 text-sm text-white hover:opacity-90 disabled:opacity-60"
+      >
+        {addingItem === food.id ? "Adding..." : "Add to Cart"}
+      </button>
+    </div>
+  </div>
+))}
+
       </div>
     </div>
   );

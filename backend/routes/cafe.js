@@ -49,6 +49,7 @@ router.get("/:id", async (req, res) => {
             name: true,
             price: true,
             description: true,
+            imageUrl: true,
           },
         },
       },
