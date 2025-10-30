@@ -20,11 +20,16 @@ const HomePage = () => {
                 Sign In
               </button>
             </Link>
-            <Link href="/signup">
-              <button className="px-4 py-2 text-sm font-medium text-white bg-purple-600 rounded hover:bg-purple-700">
-                Sign Up
-              </button>
-            </Link>
+            <Link href="/signup?role=CUSTOMER">
+                  <button className="flex items-center gap-2 px-6 py-3 font-semibold text-white bg-purple-600 rounded hover:bg-purple-700">
+                    I am a Student →
+                  </button>
+                </Link>
+                <Link href="/signup?role=CAFE_OWNER">
+                  <button className="flex items-center gap-2 px-6 py-3 font-semibold text-purple-700 border border-purple-700 rounded hover:bg-purple-100">
+                    I own a Cafe →
+                  </button>
+                </Link>
           </div>
         </div>
       </header>
