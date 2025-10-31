@@ -1,161 +1,138 @@
 "use client";
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 
-export default function OwnerDashboard() {
-  const [orders, setOrders] = useState([]);
+export default function OwnerHomePage() {
+  const router = useRouter();
+  const [stats, setStats] = useState({
+    totalOrders: 0,
+    totalRevenue: 0,
+    pendingOrders: 0,
+  });
   const [loading, setLoading] = useState(true);
   const [token, setToken] = useState(null);
-  const [newOrderIds, setNewOrderIds] = useState([]); // track newly added orders
 
-  // Get token safely in browser
   useEffect(() => {
-    const storedToken = localStorage.getItem("token");
-    setToken(storedToken);
+    const t = localStorage.getItem("token");
+    setToken(t);
   }, []);
 
-  // Fetch orders
   useEffect(() => {
     if (!token) return;
-
-    const fetchOrders = async () => {
+    async function fetchStats() {
       try {
-        const res = await fetch(
-          "http://localhost:5000/api/owner-orders/my-cafe-orders",
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-        if (!res.ok) throw new Error("Failed to fetch orders");
-
-        const data = await res.json();
-        setOrders((prev) => {
-          const prevIds = prev.map((o) => o.id);
-          const newOrders = data.filter((o) => !prevIds.includes(o.id));
-          if (newOrders.length) {
-            setNewOrderIds((ids) => [...ids, ...newOrders.map((o) => o.id)]);
-            // Remove highlight after 5s
-            setTimeout(
-              () => setNewOrderIds((ids) => ids.filter((id) => !newOrders.map((o) => o.id).includes(id))),
-              5000
-            );
-          }
-          return data || [];
+        const res = await fetch("http://localhost:5000/api/owner-orders/my-cafe-orders", {
+          headers: { Authorization: `Bearer ${token}` },
         });
+        const data = await res.json();
+        const totalOrders = data.length;
+        const totalRevenue = data.reduce(
+          (sum, order) =>
+            sum +
+            order.items.reduce(
+              (subtotal, item) => subtotal + item.food.price * item.quantity,
+              0
+            ),
+          0
+        );
+        const pendingOrders = data.filter((o) => o.status !== "READY" && o.status !== "DELIVERED").length;
+        setStats({ totalOrders, totalRevenue, pendingOrders });
       } catch (err) {
-        console.error(err);
+        console.error("Failed to fetch stats:", err);
       } finally {
         setLoading(false);
       }
-    };
-
-    fetchOrders();
-    const interval = setInterval(fetchOrders, 10000); // auto-refresh
-    return () => clearInterval(interval);
+    }
+    fetchStats();
   }, [token]);
 
-  // Mark order as READY
-  const markReady = async (orderId) => {
-    try {
-      const res = await fetch(
-        `http://localhost:5000/api/order-status/ready/${orderId}`,
-        { method: "PATCH", headers: { Authorization: `Bearer ${token}` } }
-      );
-      if (!res.ok) throw new Error("Failed to mark ready");
-      const updatedOrder = await res.json();
-      setOrders((prev) =>
-        prev.map((o) =>
-          o.id === updatedOrder.id
-            ? { ...o, status: updatedOrder.status, items: o.items || [] }
-            : o
-        )
-      );
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
-  // Undo ready → set status back to PREPARING
-  const undoReady = async (orderId) => {
-    try {
-      const res = await fetch(
-        `http://localhost:5000/api/order-status/undo/${orderId}`,
-        { method: "PATCH", headers: { Authorization: `Bearer ${token}` } }
-      );
-      if (!res.ok) throw new Error("Failed to undo ready");
-      const updatedOrder = await res.json();
-      setOrders((prev) =>
-        prev.map((o) =>
-          o.id === updatedOrder.id
-            ? { ...o, status: updatedOrder.status, items: o.items || [] }
-            : o
-        )
-      );
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
   if (loading)
-    return <div className="p-6 text-center text-gray-600">Loading orders...</div>;
+    return <div className="p-8 text-center text-gray-600">Loading dashboard...</div>;
 
   return (
-    <div className="p-6 bg-gray-50 min-h-screen">
-      <h1 className="text-3xl font-bold mb-6 text-gray-800">Owner Dashboard</h1>
+    <div className="min-h-screen bg-gray-50">
+      {/* 🔹 Header */}
+      <header className="bg-white shadow-sm sticky top-0 z-50">
+        <div className="max-w-6xl mx-auto flex justify-between items-center p-4">
+          <h1
+            onClick={() => router.push("/owner/home")}
+            className="text-2xl font-bold bg-gradient-to-r from-orange-500 to-pink-500 text-transparent bg-clip-text cursor-pointer"
+          >
+            CampusEats Owner
+          </h1>
 
-      {orders.length === 0 ? (
-        <p className="text-gray-500">No orders yet.</p>
-      ) : (
-        <div className="space-y-4">
-          {orders.map((order) => (
-            <div
-              key={order.id}
-              className={`${
-                newOrderIds.includes(order.id) ? "bg-yellow-100" : "bg-white"
-              } shadow rounded-lg p-4 flex flex-col md:flex-row justify-between items-start md:items-center transition`}
+          <nav className="flex items-center gap-6 text-gray-700 font-medium">
+            <button onClick={() => router.push("/owner/home")} className="hover:text-orange-500">
+              Home
+            </button>
+            <button onClick={() => router.push("/owner/orders")} className="hover:text-orange-500">
+              Orders
+            </button>
+            <button onClick={() => router.push("/owner/menu")} className="hover:text-orange-500">
+              Menu
+            </button>
+            <button
+              onClick={() => {
+                localStorage.removeItem("token");
+                router.push("/signin");
+              }}
+              className="text-red-500 hover:underline"
             >
-              <div className="flex-1">
-                <h2 className="font-semibold text-lg mb-1">
-                  Order #{order.id} — {order.student?.name}
-                </h2>
-                <p className="text-sm text-gray-500 mb-2">
-                  Status:{" "}
-                  <span
-                    className={`font-semibold ${
-                      order.status === "READY"
-                        ? "text-green-600"
-                        : "text-orange-600"
-                    }`}
-                  >
-                    {order.status}
-                  </span>
-                </p>
-                <ul className="pl-4 text-gray-700 space-y-1">
-                  {(order.items || []).map((item) => (
-                    <li key={item.id}>
-                      {item.food?.name || "Unknown"} × {item.quantity}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-              <div className="flex flex-col md:flex-row md:items-center md:ml-4 mt-3 md:mt-0 space-y-2 md:space-y-0 md:space-x-2">
-                {order.status !== "READY" ? (
-                  <button
-                    onClick={() => markReady(order.id)}
-                    className="rounded-lg bg-green-500 px-4 py-2 text-white font-semibold hover:bg-green-600 transition"
-                  >
-                    Mark as Ready
-                  </button>
-                ) : (
-                  <button
-                    onClick={() => undoReady(order.id)}
-                    className="rounded-lg bg-yellow-500 px-4 py-2 text-white font-semibold hover:bg-yellow-600 transition"
-                  >
-                    Undo Ready
-                  </button>
-                )}
-              </div>
-            </div>
-          ))}
+              Logout
+            </button>
+          </nav>
         </div>
-      )}
+      </header>
+
+      {/* 🔹 Dashboard Content */}
+      <main className="max-w-6xl mx-auto p-6">
+        <h2 className="text-3xl font-bold mb-6 text-gray-800">Dashboard Overview</h2>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <div className="bg-white p-6 rounded-xl shadow-md border-t-4 border-orange-500">
+            <h3 className="text-gray-500 text-sm font-medium">Total Orders</h3>
+            <p className="text-3xl font-bold text-gray-800 mt-2">{stats.totalOrders}</p>
+          </div>
+
+          <div className="bg-white p-6 rounded-xl shadow-md border-t-4 border-pink-500">
+            <h3 className="text-gray-500 text-sm font-medium">Pending Orders</h3>
+            <p className="text-3xl font-bold text-gray-800 mt-2">{stats.pendingOrders}</p>
+          </div>
+
+          <div className="bg-white p-6 rounded-xl shadow-md border-t-4 border-green-500">
+            <h3 className="text-gray-500 text-sm font-medium">Total Revenue</h3>
+            <p className="text-3xl font-bold text-gray-800 mt-2">${stats.totalRevenue.toFixed(2)}</p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="bg-white p-6 rounded-xl shadow-md">
+            <h3 className="font-semibold text-lg mb-4 text-gray-800">Quick Links</h3>
+            <div className="flex flex-col gap-3">
+              <button
+                onClick={() => router.push("/owner/orders")}
+                className="bg-orange-500 hover:bg-orange-600 text-white py-2 px-4 rounded-lg transition"
+              >
+                View Orders
+              </button>
+              <button
+                onClick={() => router.push("/owner/updateMenu")}
+                className="bg-pink-500 hover:bg-pink-600 text-white py-2 px-4 rounded-lg transition"
+              >
+                Manage Menu
+              </button>
+            </div>
+          </div>
+
+          <div className="bg-white p-6 rounded-xl shadow-md">
+            <h3 className="font-semibold text-lg mb-4 text-gray-800">Welcome Back!</h3>
+            <p className="text-gray-600">
+              Keep an eye on new orders, manage your café’s menu, and mark meals as ready when
+              they're prepared. This dashboard gives you a quick snapshot of your café’s activity.
+            </p>
+          </div>
+        </div>
+      </main>
     </div>
   );
 }
