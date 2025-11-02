@@ -6,6 +6,7 @@ const { PrismaClient } = pkg;
 const prisma = new PrismaClient();
 const router = express.Router();
 
+
 /**
  * ✅ Public: Get all cafes (for customers to browse)
  */
@@ -17,7 +18,8 @@ router.get("/", async (req, res) => {
         id: true,
         name: true,
         email: true,
-        foods: {
+        imageUrl: true,  
+              foods: {
           select: {
             id: true,
             name: true,
@@ -49,6 +51,7 @@ router.get("/:id", async (req, res) => {
         id: true,
         name: true,
         email: true,
+        imageUrl: true,
         foods: {
           select: {
             id: true,
@@ -69,37 +72,6 @@ router.get("/:id", async (req, res) => {
   }
 });
 
-/**
- * 🔒 Private: Get logged-in cafe owner's own menu (for UpdateMenuPage)
- */
-router.get("/menu/me", authMiddleware(), async (req, res) => {
-  try {
-    const ownerId = req.userId; // from token
 
-    const cafe = await prisma.user.findUnique({
-      where: { id: ownerId },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        foods: {
-          select: {
-            id: true,
-            name: true,
-            price: true,
-            description: true,
-            imageUrl: true,
-          },
-        },
-      },
-    });
-
-    if (!cafe) return res.status(404).json({ error: "Cafe not found" });
-    res.json(cafe.foods);
-  } catch (err) {
-    console.error("Error fetching cafe menu:", err);
-    res.status(500).json({ error: "Failed to fetch cafe menu" });
-  }
-});
 
 export default router;

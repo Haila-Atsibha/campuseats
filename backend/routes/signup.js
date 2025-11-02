@@ -1,17 +1,24 @@
-// routes/signup.js
 import express from "express";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+import multer from "multer";
 import pkg from "../generated/prisma/index.js";
-const { PrismaClient } = pkg;
 import dotenv from "dotenv";
 
 dotenv.config();
+const { PrismaClient } = pkg;
 const prisma = new PrismaClient();
 const router = express.Router();
 
+// ✅ Configure file upload (store in /uploads)
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => cb(null, "uploads/"),
+  filename: (req, file, cb) => cb(null, Date.now() + "-" + file.originalname),
+});
+const upload = multer({ storage });
+
 // ✅ Signup route
-router.post("/", async (req, res) => {
+router.post("/", upload.single("image"), async (req, res) => {
   try {
     const { name, email, password, role } = req.body;
 
@@ -35,13 +42,20 @@ router.post("/", async (req, res) => {
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Create user with correct enum
+    // ✅ Handle optional profile image
+    let imageUrl = null;
+    if (req.file) {
+      imageUrl = `/uploads/${req.file.filename}`;
+    }
+
+    // ✅ Create user (with image if cafe)
     const user = await prisma.user.create({
       data: {
         name,
         email,
         password: hashedPassword,
-        role, // This will correctly map to Prisma enum
+        role,
+        imageUrl, // null for customers, file path for cafes
       },
     });
 
@@ -52,18 +66,18 @@ router.post("/", async (req, res) => {
       { expiresIn: "7d" }
     );
 
-    // Respond
     res.status(201).json({
       user: {
         id: user.id,
         name: user.name,
         email: user.email,
         role: user.role,
+        imageUrl: user.imageUrl,
       },
       token,
     });
   } catch (err) {
-    console.error(err);
+    console.error("Signup error:", err);
     res.status(500).json({ error: "Server error" });
   }
 });
