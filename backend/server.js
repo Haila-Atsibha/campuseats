@@ -14,6 +14,9 @@ import ownerOrdersRoute from "./routes/ownerOrders.js"
 import orderStatusRoute from "./routes/orderStatus.js"
 import cafesRoutes from "./routes/cafe.js";
 import userRoutes from "./routes/user.js"
+import ratingRoutes from "./routes/ratings.js";
+
+
 
 
 
@@ -33,6 +36,8 @@ app.use("/api/owner-orders", ownerOrdersRoute)
 app.use("/api/order-status", orderStatusRoute)
 app.use("/api/cafe", cafesRoutes);
 app.use("/api/user", userRoutes);
+app.use("/api/ratings", ratingRoutes);
+
 
 
 app.get("/", (req, res) => res.send("Backend running 🚀"))

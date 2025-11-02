@@ -2,6 +2,56 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 
+/* ⭐ Reusable StarRating component */
+function StarRating({ cafeId, currentRating, onRated }) {
+  const [rating, setRating] = useState(currentRating || 0);
+  const [hover, setHover] = useState(0);
+
+  async function handleRate(value) {
+    setRating(value);
+
+    const token = localStorage.getItem("token");
+    if (!token) {
+      alert("You need to log in to rate cafés!");
+      return;
+    }
+
+    try {
+      await fetch("http://localhost:5000/api/ratings", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ cafeId, value }),
+      });
+
+      onRated?.(value);
+    } catch (err) {
+      console.error("Failed to submit rating:", err);
+    }
+  }
+
+  return (
+    <div className="flex gap-1 mb-2">
+      {[1, 2, 3, 4, 5].map((star) => (
+        <svg
+          key={star}
+          onClick={() => handleRate(star)}
+          onMouseEnter={() => setHover(star)}
+          onMouseLeave={() => setHover(0)}
+          xmlns="http://www.w3.org/2000/svg"
+          fill={(hover || rating) >= star ? "gold" : "gray"}
+          viewBox="0 0 24 24"
+          className="w-6 h-6 cursor-pointer hover:scale-110 transition-transform"
+        >
+          <path d="M12 .587l3.668 7.568 8.332 1.151-6.001 5.85 1.415 8.344L12 18.897l-7.414 4.603 1.415-8.344-6.001-5.85 8.332-1.151z" />
+        </svg>
+      ))}
+    </div>
+  );
+}
+
 export default function StudentDashboard() {
   const [cafes, setCafes] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -41,7 +91,9 @@ export default function StudentDashboard() {
             <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-r from-orange-500 to-pink-500">
               <span className="text-xl font-bold text-white">CE</span>
             </div>
-            <span className="text-xl font-bold text-gray-800 dark:text-gray-100">CampusEats</span>
+            <span className="text-xl font-bold text-gray-800 dark:text-gray-100">
+              CampusEats
+            </span>
           </div>
           <div className="flex items-center gap-3">
             <Link href="/profile">
@@ -81,21 +133,34 @@ export default function StudentDashboard() {
                 className="rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-6 shadow-md hover:shadow-lg transition-shadow"
               >
                 {/* ✅ Café Profile Image */}
-              <img
-  src={cafe.imageUrl ? `http://localhost:5000${cafe.imageUrl}` : "/default-cafe.png"}
-  alt={`${cafe.name} profile`}
-  className="w-full h-40 object-cover rounded-xl mb-4"
-  onError={(e) => (e.target.src = "/default-cafe.png")}
-/>
-
-                
+                <img
+                  src={
+                    cafe.imageUrl
+                      ? `http://localhost:5000${cafe.imageUrl}`
+                      : "/default-cafe.png"
+                  }
+                  alt={`${cafe.name} profile`}
+                  className="w-full h-40 object-cover rounded-xl mb-4"
+                  onError={(e) => (e.target.src = "/default-cafe.png")}
+                />
 
                 <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100 mb-2">
                   {cafe.name}
                 </h2>
 
+                {/* ⭐ Star rating + average */}
+                <StarRating
+                  cafeId={cafe.id}
+                  currentRating={Math.round(cafe.averageRating || 0)}
+                />
+                <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">
+                  Avg Rating: ⭐ {cafe.averageRating ? cafe.averageRating : "0.0"}
+                </p>
+
                 {cafe.description && (
-                  <p className="text-gray-500 dark:text-gray-400 mb-4">{cafe.description}</p>
+                  <p className="text-gray-500 dark:text-gray-400 mb-4">
+                    {cafe.description}
+                  </p>
                 )}
 
                 <Link
