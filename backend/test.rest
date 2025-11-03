@@ -68,5 +68,9 @@ Content-Type: application/json
   "foodId": 1,
   "quantity": 1
 }
+###
+GET http://localhost:5000/api/favorites
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjcsInJvbGUiOiJDQUZFX09XTkVSIiwiaWF0IjoxNzYxNjM0NjAxLCJleHAiOjE3NjIyMzk0MDF9.ovn84Go9sEFA3taHYUCUWay2jAJNVYSyQmXcwNA2j78
+
 
 

@@ -15,6 +15,8 @@ import orderStatusRoute from "./routes/orderStatus.js"
 import cafesRoutes from "./routes/cafe.js";
 import userRoutes from "./routes/user.js"
 import ratingRoutes from "./routes/ratings.js";
+import favoriteRoutes from "./routes/favorites.js"
+
 
 
 
@@ -37,6 +39,10 @@ app.use("/api/order-status", orderStatusRoute)
 app.use("/api/cafe", cafesRoutes);
 app.use("/api/user", userRoutes);
 app.use("/api/ratings", ratingRoutes);
+app.use("/api/favorites", favoriteRoutes)
+
+
+
 
 
 

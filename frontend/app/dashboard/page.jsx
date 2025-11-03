@@ -9,7 +9,6 @@ function StarRating({ cafeId, currentRating, onRated }) {
 
   async function handleRate(value) {
     setRating(value);
-
     const token = localStorage.getItem("token");
     if (!token) {
       alert("You need to log in to rate cafés!");
@@ -25,7 +24,6 @@ function StarRating({ cafeId, currentRating, onRated }) {
         },
         body: JSON.stringify({ cafeId, value }),
       });
-
       onRated?.(value);
     } catch (err) {
       console.error("Failed to submit rating:", err);
@@ -54,22 +52,17 @@ function StarRating({ cafeId, currentRating, onRated }) {
 
 export default function StudentDashboard() {
   const [cafes, setCafes] = useState([]);
+  const [favorites, setFavorites] = useState([]); // favorite cafe IDs
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
+  // ✅ Fetch all cafés
   useEffect(() => {
     async function fetchCafes() {
       try {
         const res = await fetch("http://localhost:5000/api/cafe");
         const data = await res.json();
-
-        if (!Array.isArray(data)) {
-          console.error("Expected array but got:", data);
-          setError("Failed to fetch cafés");
-          setLoading(false);
-          return;
-        }
-
+        if (!Array.isArray(data)) throw new Error("Invalid data");
         setCafes(data);
       } catch (err) {
         console.error("Failed to fetch cafés:", err);
@@ -81,6 +74,64 @@ export default function StudentDashboard() {
 
     fetchCafes();
   }, []);
+
+  // ✅ Fetch user's favorites from backend
+  useEffect(() => {
+    async function fetchFavorites() {
+      const token = localStorage.getItem("token");
+      if (!token) return;
+
+      try {
+        const res = await fetch("http://localhost:5000/api/favorites", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const data = await res.json();
+        if (Array.isArray(data)) {
+          const ids = data.map((fav) => fav.id); // data returns array of cafes
+          setFavorites(ids);
+        }
+      } catch (err) {
+        console.error("Failed to fetch favorites:", err);
+      }
+    }
+
+    fetchFavorites();
+  }, []);
+
+  // ✅ Toggle Favorite (syncs with backend)
+  async function toggleFavorite(cafeId) {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      alert("Please log in to save favorites.");
+      return;
+    }
+
+    try {
+      const res = await fetch(`http://localhost:5000/api/favorites/${cafeId}`, {
+        method: "POST", // backend toggle handles add/remove
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || "Failed to update favorites");
+      }
+
+      const data = await res.json();
+      console.log(data.message);
+
+      // Update local state
+      setFavorites((prev) =>
+        prev.includes(cafeId) ? prev.filter((id) => id !== cafeId) : [...prev, cafeId]
+      );
+    } catch (err) {
+      console.error("Error updating favorites:", err);
+      alert(err.message);
+    }
+  }
 
   return (
     <div className="flex min-h-screen flex-col bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
@@ -96,6 +147,11 @@ export default function StudentDashboard() {
             </span>
           </div>
           <div className="flex items-center gap-3">
+            <Link href="/favorites">
+              <button className="rounded-lg border border-gray-300 dark:border-gray-600 px-4 py-2 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700">
+                Favorites ❤️
+              </button>
+            </Link>
             <Link href="/profile">
               <button className="rounded-lg border border-gray-300 dark:border-gray-600 px-4 py-2 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700">
                 Profile
@@ -110,13 +166,13 @@ export default function StudentDashboard() {
         </div>
       </header>
 
-      {/* Main Content */}
+      {/* Main */}
       <main className="flex flex-1 flex-col items-center px-4 py-16">
         <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-6 text-center">
           Welcome to CampusEats 🎓
         </h1>
-        <p className="text-gray-600 dark:text-gray-400 mb-10 text-center">
-          Order from your favorite campus cafés and restaurants — quick, easy, and delicious.
+        <p className="text-gray-600 dark:text-gray-400 mb-10 text-center max-w-2xl">
+          Discover and order from your favorite cafés and restaurants on campus — quick, easy, and delicious.
         </p>
 
         {loading ? (
@@ -132,7 +188,6 @@ export default function StudentDashboard() {
                 key={cafe.id}
                 className="rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-6 shadow-md hover:shadow-lg transition-shadow"
               >
-                {/* ✅ Café Profile Image */}
                 <img
                   src={
                     cafe.imageUrl
@@ -144,28 +199,44 @@ export default function StudentDashboard() {
                   onError={(e) => (e.target.src = "/default-cafe.png")}
                 />
 
-                <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100 mb-2">
-                  {cafe.name}
-                </h2>
+                <div className="flex justify-between items-start">
+                  <div>
+                    <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100">
+                      {cafe.name}
+                    </h2>
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">
+                      ⭐ {cafe.averageRating ? cafe.averageRating : "0.0"}
+                    </p>
+                  </div>
 
-                {/* ⭐ Star rating + average */}
+                  {/* ❤️ Favorite Button */}
+                  <button
+                    onClick={() => toggleFavorite(cafe.id)}
+                    className={`transition transform hover:scale-110 ${
+                      favorites.includes(cafe.id)
+                        ? "text-red-500"
+                        : "text-gray-400 hover:text-red-500"
+                    }`}
+                    aria-label="Add to favorites"
+                  >
+                    {favorites.includes(cafe.id) ? "❤️" : "🤍"}
+                  </button>
+                </div>
+
                 <StarRating
                   cafeId={cafe.id}
                   currentRating={Math.round(cafe.averageRating || 0)}
                 />
-                <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">
-                  Avg Rating: ⭐ {cafe.averageRating ? cafe.averageRating : "0.0"}
-                </p>
 
                 {cafe.description && (
-                  <p className="text-gray-500 dark:text-gray-400 mb-4">
+                  <p className="text-gray-500 dark:text-gray-400 mb-4 text-sm">
                     {cafe.description}
                   </p>
                 )}
 
                 <Link
                   href={`/cafes/${cafe.id}`}
-                  className="inline-block rounded-lg bg-gradient-to-r from-orange-500 to-pink-500 px-4 py-2 font-semibold text-white hover:opacity-90"
+                  className="inline-block w-full text-center rounded-lg bg-gradient-to-r from-orange-500 to-pink-500 px-4 py-2 font-semibold text-white hover:opacity-90"
                 >
                   View Menu →
                 </Link>
