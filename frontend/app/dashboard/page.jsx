@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 /* ⭐ Reusable StarRating component */
 function StarRating({ cafeId, currentRating, onRated }) {
@@ -52,9 +53,10 @@ function StarRating({ cafeId, currentRating, onRated }) {
 
 export default function StudentDashboard() {
   const [cafes, setCafes] = useState([]);
-  const [favorites, setFavorites] = useState([]); // favorite cafe IDs
+  const [favorites, setFavorites] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const router = useRouter();
 
   // ✅ Fetch all cafés
   useEffect(() => {
@@ -87,7 +89,7 @@ export default function StudentDashboard() {
         });
         const data = await res.json();
         if (Array.isArray(data)) {
-          const ids = data.map((fav) => fav.id); // data returns array of cafes
+          const ids = data.map((fav) => fav.id);
           setFavorites(ids);
         }
       } catch (err) {
@@ -98,7 +100,7 @@ export default function StudentDashboard() {
     fetchFavorites();
   }, []);
 
-  // ✅ Toggle Favorite (syncs with backend)
+  // ✅ Toggle Favorite
   async function toggleFavorite(cafeId) {
     const token = localStorage.getItem("token");
     if (!token) {
@@ -108,7 +110,7 @@ export default function StudentDashboard() {
 
     try {
       const res = await fetch(`http://localhost:5000/api/favorites/${cafeId}`, {
-        method: "POST", // backend toggle handles add/remove
+        method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
@@ -123,7 +125,6 @@ export default function StudentDashboard() {
       const data = await res.json();
       console.log(data.message);
 
-      // Update local state
       setFavorites((prev) =>
         prev.includes(cafeId) ? prev.filter((id) => id !== cafeId) : [...prev, cafeId]
       );
@@ -131,6 +132,12 @@ export default function StudentDashboard() {
       console.error("Error updating favorites:", err);
       alert(err.message);
     }
+  }
+
+  // ✅ Logout function
+  function handleLogout() {
+    localStorage.removeItem("token");
+    router.push("/login");
   }
 
   return (
@@ -162,6 +169,13 @@ export default function StudentDashboard() {
                 My Orders
               </button>
             </Link>
+            {/* ✅ Logout button */}
+            <button
+              onClick={handleLogout}
+              className="rounded-lg bg-red-500 px-4 py-2 font-semibold text-white hover:bg-red-600 active:scale-95 transition-transform"
+            >
+              Logout
+            </button>
           </div>
         </div>
       </header>

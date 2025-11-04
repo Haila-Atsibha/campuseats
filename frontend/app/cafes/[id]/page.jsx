@@ -104,7 +104,7 @@ export default function CafeMenuPage() {
           </h1>
 
           <nav className="flex items-center gap-6 text-gray-800 dark:text-gray-200 font-medium relative">
-            <button onClick={() => router.push("/")} className="hover:text-orange-500">
+            <button onClick={() => router.push("/dashboard")} className="hover:text-orange-500">
               Home
             </button>
             <button onClick={() => router.push("/profile/favorites")} className="hover:text-orange-500">
@@ -125,19 +125,8 @@ export default function CafeMenuPage() {
               )}
             </div>
 
-            <button onClick={() => router.push("/profile")} className="hover:text-orange-500">
-              Profile
-            </button>
-            <button
-              onClick={() => {
-                localStorage.removeItem("token");
-                localStorage.removeItem("cartNotificationCount");
-                router.push("/signin");
-              }}
-              className="text-red-500 hover:underline"
-            >
-              Logout
-            </button>
+           
+           
           </nav>
         </div>
       </header>

@@ -10,14 +10,14 @@ export default function UpdateMenuPage() {
   const [message, setMessage] = useState("");
   const [darkMode, setDarkMode] = useState(false);
 
-  // ✅ Detect system theme
+  // Detect dark mode
   useEffect(() => {
     const mq = window.matchMedia("(prefers-color-scheme: dark)");
     setDarkMode(mq.matches);
     mq.addEventListener("change", (e) => setDarkMode(e.matches));
   }, []);
 
-  // ✅ Load token + fetch foods
+  // Load token and fetch foods
   useEffect(() => {
     const t = localStorage.getItem("token");
     setToken(t);
@@ -26,7 +26,7 @@ export default function UpdateMenuPage() {
 
   async function fetchFoods(t) {
     try {
-      const res = await fetch(`http://localhost:5000/api/cafe/menu/me`, {
+      const res = await fetch(`http://localhost:5000/api/food/myfoods`, {
         headers: { Authorization: `Bearer ${t}` },
       });
       if (!res.ok) throw new Error("Failed to load foods");
@@ -42,14 +42,11 @@ export default function UpdateMenuPage() {
 
   function handleNewChange(e) {
     const { name, value, files } = e.target;
-    if (name === "imageFile") {
-      setNewFood({ ...newFood, imageFile: files[0] });
-    } else {
-      setNewFood({ ...newFood, [name]: value });
-    }
+    if (name === "imageFile") setNewFood({ ...newFood, imageFile: files[0] });
+    else setNewFood({ ...newFood, [name]: value });
   }
 
-  // ✅ Add new food
+  // Add new food
   async function handleAddFood(e) {
     e.preventDefault();
     if (!newFood.name || !newFood.price) {
@@ -62,7 +59,7 @@ export default function UpdateMenuPage() {
       formData.append("name", newFood.name);
       formData.append("price", newFood.price);
       formData.append("description", newFood.description);
-      if (newFood.imageFile) formData.append("image", newFood.imageFile);
+      if (newFood.imageFile) formData.append("imageFile", newFood.imageFile); // match backend
 
       const res = await fetch("http://localhost:5000/api/food/create", {
         method: "POST",
@@ -82,10 +79,11 @@ export default function UpdateMenuPage() {
     }
   }
 
+  // Delete food
   async function handleDelete(foodId) {
     if (!confirm("Are you sure you want to delete this food?")) return;
     try {
-      const res = await fetch(`http://localhost:5000/api/food/${foodId}`, {
+      const res = await fetch(`http://localhost:5000/api/food/delete/${foodId}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -98,18 +96,24 @@ export default function UpdateMenuPage() {
     }
   }
 
+  // Save edits (including new image)
   async function handleEditSave(e) {
     e.preventDefault();
-    const { id, name, price, description } = editingFood;
+    const { id, name, price, description, imageFile } = editingFood;
+
     try {
-      const res = await fetch(`http://localhost:5000/api/food/${id}`, {
+      const formData = new FormData();
+      formData.append("name", name);
+      formData.append("price", price);
+      formData.append("description", description);
+      if (imageFile) formData.append("imageFile", imageFile);
+
+      const res = await fetch(`http://localhost:5000/api/food/update/${id}`, {
         method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ name, price: Number(price), description }),
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData,
       });
+
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Update failed");
 
@@ -134,6 +138,7 @@ export default function UpdateMenuPage() {
         </p>
       )}
 
+      {/* Add Food Form */}
       <form onSubmit={handleAddFood} className={`${darkMode ? "bg-gray-800" : "bg-white"} p-4 rounded-lg shadow mb-6 grid grid-cols-1 md:grid-cols-4 gap-4`}>
         <input type="text" name="name" placeholder="Food name" value={newFood.name} onChange={handleNewChange} className={`${darkMode ? "bg-gray-700 border-gray-600" : "border"} border p-2 rounded`} />
         <input type="number" name="price" placeholder="Price" value={newFood.price} onChange={handleNewChange} className={`${darkMode ? "bg-gray-700 border-gray-600" : "border"} border p-2 rounded`} />
@@ -142,6 +147,7 @@ export default function UpdateMenuPage() {
         <textarea name="description" placeholder="Description" value={newFood.description} onChange={handleNewChange} className={`${darkMode ? "bg-gray-700 border-gray-600" : "border"} border p-2 rounded col-span-full`} />
       </form>
 
+      {/* Food Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {foods.map((food) =>
           editingFood?.id === food.id ? (
@@ -149,6 +155,7 @@ export default function UpdateMenuPage() {
               <input type="text" value={editingFood.name} onChange={(e) => setEditingFood({ ...editingFood, name: e.target.value })} className={`${darkMode ? "bg-gray-700 border-gray-600" : "border"} border p-2 rounded`} />
               <input type="number" value={editingFood.price} onChange={(e) => setEditingFood({ ...editingFood, price: e.target.value })} className={`${darkMode ? "bg-gray-700 border-gray-600" : "border"} border p-2 rounded`} />
               <textarea value={editingFood.description} onChange={(e) => setEditingFood({ ...editingFood, description: e.target.value })} className={`${darkMode ? "bg-gray-700 border-gray-600" : "border"} border p-2 rounded`} />
+              <input type="file" accept="image/*" onChange={(e) => setEditingFood({ ...editingFood, imageFile: e.target.files[0] })} className={`${darkMode ? "bg-gray-700 border-gray-600" : "border"} border p-2 rounded`} />
               <div className="flex justify-end gap-2">
                 <button type="submit" className="bg-blue-500 text-white rounded px-3 py-1 hover:bg-blue-600">Save</button>
                 <button type="button" onClick={() => setEditingFood(null)} className="bg-gray-500 text-white rounded px-3 py-1 hover:bg-gray-600">Cancel</button>
