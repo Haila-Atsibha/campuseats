@@ -21,7 +21,6 @@ import favoriteRoutes from "./routes/favorites.js"
 
 
 
-
 dotenv.config()
 const app = express()
 

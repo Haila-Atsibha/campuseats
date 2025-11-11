@@ -107,9 +107,6 @@ export default function CafeMenuPage() {
             <button onClick={() => router.push("/dashboard")} className="hover:text-orange-500">
               Home
             </button>
-            <button onClick={() => router.push("/profile/favorites")} className="hover:text-orange-500">
-              Favorites
-            </button>
             <button onClick={() => router.push("/orderHistory")} className="hover:text-orange-500">
               Orders
             </button>

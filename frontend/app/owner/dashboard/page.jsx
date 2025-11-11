@@ -46,7 +46,7 @@ export default function OwnerHomePage() {
         ).length;
 
         setStats({ totalOrders, totalRevenue, pendingOrders });
-        setNewOrders(pendingOrders); // show count on Orders link
+        setNewOrders(pendingOrders);
       } catch (err) {
         console.error("Error fetching stats:", err);
       } finally {
@@ -55,12 +55,12 @@ export default function OwnerHomePage() {
     }
 
     fetchStats();
-    const interval = setInterval(fetchStats, 10000); // check every 10s for updates
+    const interval = setInterval(fetchStats, 10000);
     return () => clearInterval(interval);
   }, [token]);
 
   const handleOrdersClick = () => {
-    setNewOrders(0); // remove red badge once clicked
+    setNewOrders(0);
     router.push("/owner/orders");
   };
 
@@ -96,10 +96,18 @@ export default function OwnerHomePage() {
           </button>
 
           <button
-            onClick={() => router.push("/owner/menu")}
+            onClick={() => router.push("/owner/updateMenu")}
             className="hover:text-orange-500 transition"
           >
             Menu
+          </button>
+
+          {/* ⭐ New Profile link */}
+          <button
+            onClick={() => router.push("/owner/profile")}
+            className="hover:text-orange-500 transition"
+          >
+            Profile
           </button>
 
           <button
@@ -163,6 +171,14 @@ export default function OwnerHomePage() {
               >
                 Manage Menu
               </button>
+
+              {/* ⭐ Quick access to Profile too */}
+              <button
+                onClick={() => router.push("/owner/profile")}
+                className="bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white font-semibold py-2 px-4 rounded-xl shadow-md transition active:scale-95"
+              >
+                View Profile
+              </button>
             </div>
           </div>
 
@@ -178,7 +194,6 @@ export default function OwnerHomePage() {
         </div>
       </main>
 
-      {/* Footer */}
       <footer className="max-w-6xl mx-auto mt-10 text-center text-sm text-gray-500 dark:text-gray-400">
         &copy; {new Date().getFullYear()} CampusEats. All rights reserved.
       </footer>

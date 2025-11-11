@@ -121,7 +121,7 @@ export default function ProfilePage() {
           {/* Action Buttons */}
           <div className="mt-10 flex flex-wrap gap-4 justify-center sm:justify-start">
             <Link
-              href="/profile/edit"
+              href="/owner/profile/edit"
               className="px-6 py-2.5 bg-gradient-to-r from-orange-500 to-pink-500 text-white font-semibold rounded-lg shadow-lg hover:opacity-90 transition"
             >
               Edit Profile
@@ -135,7 +135,7 @@ export default function ProfilePage() {
             </Link>
 
             <Link
-              href="/profile/settings"
+              href="/owner/profile/settings"
               className="px-6 py-2.5 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 font-semibold rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition"
             >
               Settings
